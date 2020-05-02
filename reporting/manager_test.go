@@ -78,24 +78,37 @@ func (s *ReportManagerSuite) TestCreateReportError() {
 	s.Equal(createError, err)
 }
 
-func (s *ReportManagerSuite) TestAppendMessage_GetUserReportError() {
+func (s *ReportManagerSuite) TestAppendMessage_UserHasAccessError() {
 	s.mockUUIDGenerator.EXPECT().Generate().Return("reportid").Times(1)
 
-	getError := errors.New("get report error")
+	hasAccessError := errors.New("has access error")
 	s.mockReportStore.
 		EXPECT().
-		GetUserReport(gomock.Any()).
-		Return(reportstore.GetUserReportResponse{}, getError).
+		UserHasAccess(gomock.Any()).
+		Return(reportstore.UserHasAccessResponse{}, hasAccessError).
 		Times(1)
 
 	_, err := s.manager.AppendMessage(AppendMessageRequest{})
-	s.Equal(getError, err)
+	s.Equal(hasAccessError, err)
+}
+
+func (s *ReportManagerSuite) TestAppendMessage_UserNoAccess() {
+	s.mockUUIDGenerator.EXPECT().Generate().Return("reportid").Times(1)
+
+	s.mockReportStore.
+		EXPECT().
+		UserHasAccess(gomock.Any()).
+		Return(reportstore.UserHasAccessResponse{HasAccess: false}, nil).
+		Times(1)
+
+	_, err := s.manager.AppendMessage(AppendMessageRequest{})
+	s.Equal(ErrNotHavePermission, err)
 }
 
 func (s *ReportManagerSuite) TestAppendMessage_AppendMessageError() {
 	s.mockUUIDGenerator.EXPECT().Generate().Return("reportid").Times(1)
 
-	s.mockReportStore.EXPECT().GetUserReport(gomock.Any()).Return(reportstore.GetUserReportResponse{}, nil).Times(1)
+	s.mockReportStore.EXPECT().UserHasAccess(gomock.Any()).Return(reportstore.UserHasAccessResponse{HasAccess: true}, nil).Times(1)
 
 	appendError := errors.New("append message error")
 	s.mockReportStore.EXPECT().AppendMessage(gomock.Any()).Return(appendError).Times(1)
@@ -114,8 +127,8 @@ func (s *ReportManagerSuite) TestAppendMessage() {
 
 	s.mockReportStore.
 		EXPECT().
-		GetUserReport(gomock.Eq(reportstore.GetUserReportRequest{UserID: userID, ReportID: reportID})).
-		Return(reportstore.GetUserReportResponse{}, nil).
+		UserHasAccess(gomock.Eq(reportstore.UserHasAccessRequest{UserID: userID, ReportID: reportID})).
+		Return(reportstore.UserHasAccessResponse{HasAccess: true}, nil).
 		Times(1)
 
 	s.mockReportStore.
@@ -133,6 +146,102 @@ func (s *ReportManagerSuite) TestAppendMessage() {
 
 	expectedResponse := AppendMessageResponse{
 		MessageID: "messageid",
+	}
+	s.Equal(expectedResponse, actualResponse)
+}
+
+func (s *ReportManagerSuite) TestUpdateReportStatus_UnknownReportStatus() {
+	_, err := s.manager.UpdateReportStatus(UpdateReportStatusRequest{
+		Status: "some unknonw status",
+	})
+	s.Equal(ErrUnknownReportStatus, err)
+}
+
+func (s *ReportManagerSuite) TestUpdateReportStatus_UserHasAccessError() {
+	hasAccessError := errors.New("has access error")
+	s.mockReportStore.
+		EXPECT().
+		UserHasAccess(gomock.Any()).
+		Return(reportstore.UserHasAccessResponse{}, hasAccessError).
+		Times(1)
+
+	_, err := s.manager.UpdateReportStatus(UpdateReportStatusRequest{Status: reportstore.ReportStatusPending.String()})
+	s.Equal(hasAccessError, err)
+}
+
+func (s *ReportManagerSuite) TestUpdateReportStatus_UserNoAccess() {
+	s.mockReportStore.
+		EXPECT().
+		UserHasAccess(gomock.Any()).
+		Return(reportstore.UserHasAccessResponse{HasAccess: false}, nil).
+		Times(1)
+
+	_, err := s.manager.UpdateReportStatus(UpdateReportStatusRequest{Status: reportstore.ReportStatusPending.String()})
+	s.Equal(ErrNotHavePermission, err)
+}
+
+func (s *ReportManagerSuite) TestUpdateReportStatus() {
+	userID := "userid"
+	reportID := "reportid"
+	status := reportstore.ReportStatusPending
+
+	s.mockReportStore.
+		EXPECT().
+		UserHasAccess(gomock.Eq(reportstore.UserHasAccessRequest{UserID: userID, ReportID: reportID})).
+		Return(reportstore.UserHasAccessResponse{HasAccess: true}, nil).
+		Times(1)
+
+	s.mockReportStore.
+		EXPECT().
+		UpdateReportStatus(gomock.Eq(reportstore.UpdateReportStatusRequest{ReportID: reportID, Status: status})).
+		Return(nil).
+		Times(1)
+
+	actualResponse, err := s.manager.UpdateReportStatus(UpdateReportStatusRequest{UserID: userID, ReportID: reportID, Status: status.String()})
+	s.NoError(err)
+
+	expectedResponse := UpdateReportStatusResponse{}
+	s.Equal(expectedResponse, actualResponse)
+}
+
+func (s *ReportManagerSuite) TestGetUserReportsError() {
+	getError := errors.New("get error")
+	s.mockReportStore.
+		EXPECT().
+		GetUserReports(gomock.Any()).
+		Return(reportstore.GetUserReportsResponse{}, getError).
+		Times(1)
+
+	_, err := s.manager.GetUserReports(GetUserReportsRequest{})
+	s.Equal(getError, err)
+}
+
+func (s *ReportManagerSuite) TestGetUserReports() {
+	userID := "userid"
+	reports := []reportstore.Report{
+		{
+			ReportID: "reportid1",
+			UserID:   userID,
+		},
+		{
+			ReportID: "reportid2",
+			UserID:   userID,
+		},
+	}
+
+	s.mockReportStore.
+		EXPECT().
+		GetUserReports(gomock.Eq(reportstore.GetUserReportsRequest{UserID: userID})).
+		Return(reportstore.GetUserReportsResponse{Reports: reports}, nil).
+		Times(1)
+
+	actualResponse, err := s.manager.GetUserReports(GetUserReportsRequest{
+		UserID: userID,
+	})
+	s.NoError(err)
+
+	expectedResponse := GetUserReportsResponse{
+		Reports: reports,
 	}
 	s.Equal(expectedResponse, actualResponse)
 }

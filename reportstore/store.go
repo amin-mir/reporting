@@ -4,7 +4,9 @@ package reportstore
 
 type Store interface {
 	CreateReport(r CreateReportRequest) error
+	UpdateReportStatus(r UpdateReportStatusRequest) error
 	GetUserReport(r GetUserReportRequest) (GetUserReportResponse, error)
+	GetUserReports(r GetUserReportsRequest) (GetUserReportsResponse, error)
 	UserHasAccess(r UserHasAccessRequest) (UserHasAccessResponse, error)
 	AppendMessage(r AppendMessageRequest) error
 }
@@ -16,6 +18,11 @@ type CreateReportRequest struct {
 	Title    string
 }
 
+type UpdateReportStatusRequest struct {
+	ReportID string
+	Status   ReportStatus
+}
+
 type GetUserReportRequest struct {
 	UserID   string
 	ReportID string
@@ -25,13 +32,21 @@ type GetUserReportResponse struct {
 	Report Report
 }
 
+type GetUserReportsRequest struct {
+	UserID string
+}
+
+type GetUserReportsResponse struct {
+	Reports []Report
+}
+
 type UserHasAccessRequest struct {
 	UserID   string
 	ReportID string
 }
 
 type UserHasAccessResponse struct {
-	HasAcess bool
+	HasAccess bool
 }
 
 type AppendMessageRequest struct {

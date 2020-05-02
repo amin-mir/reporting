@@ -47,6 +47,20 @@ func (mr *MockStoreMockRecorder) CreateReport(r interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateReport", reflect.TypeOf((*MockStore)(nil).CreateReport), r)
 }
 
+// UpdateReportStatus mocks base method
+func (m *MockStore) UpdateReportStatus(r reportstore.UpdateReportStatusRequest) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateReportStatus", r)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateReportStatus indicates an expected call of UpdateReportStatus
+func (mr *MockStoreMockRecorder) UpdateReportStatus(r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateReportStatus", reflect.TypeOf((*MockStore)(nil).UpdateReportStatus), r)
+}
+
 // GetUserReport mocks base method
 func (m *MockStore) GetUserReport(r reportstore.GetUserReportRequest) (reportstore.GetUserReportResponse, error) {
 	m.ctrl.T.Helper()
@@ -60,6 +74,21 @@ func (m *MockStore) GetUserReport(r reportstore.GetUserReportRequest) (reportsto
 func (mr *MockStoreMockRecorder) GetUserReport(r interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserReport", reflect.TypeOf((*MockStore)(nil).GetUserReport), r)
+}
+
+// GetUserReports mocks base method
+func (m *MockStore) GetUserReports(r reportstore.GetUserReportsRequest) (reportstore.GetUserReportsResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUserReports", r)
+	ret0, _ := ret[0].(reportstore.GetUserReportsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetUserReports indicates an expected call of GetUserReports
+func (mr *MockStoreMockRecorder) GetUserReports(r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserReports", reflect.TypeOf((*MockStore)(nil).GetUserReports), r)
 }
 
 // UserHasAccess mocks base method

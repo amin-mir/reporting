@@ -20,7 +20,20 @@ func (s ReportStatus) String() string {
 	case ReportStatusResolved:
 		return "resolved"
 	default:
-		return "unknown"
+		return ""
+	}
+}
+
+func ParseReportStatus(s string) ReportStatus {
+	switch s {
+	case "pending":
+		return ReportStatusPending
+	case "reviewing":
+		return ReportStatusReviewing
+	case "resolved":
+		return ReportStatusResolved
+	default:
+		return ReportStatusUnknown
 	}
 }
 

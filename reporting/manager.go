@@ -36,11 +36,16 @@ func (m *ReportManager) AppendMessage(request AppendMessageRequest) (response Ap
 	messageID := m.uuidGenerator.Generate()
 
 	// check if user has permission
-	_, err = m.store.GetUserReport(reportstore.GetUserReportRequest{
+	var resp reportstore.UserHasAccessResponse
+	resp, err = m.store.UserHasAccess(reportstore.UserHasAccessRequest{
 		UserID:   request.UserID,
 		ReportID: request.ReportID,
 	})
 	if err != nil {
+		return
+	}
+	if !resp.HasAccess {
+		err = ErrNotHavePermission
 		return
 	}
 
@@ -52,5 +57,41 @@ func (m *ReportManager) AppendMessage(request AppendMessageRequest) (response Ap
 	})
 
 	response.MessageID = messageID
+	return
+}
+
+func (m *ReportManager) UpdateReportStatus(request UpdateReportStatusRequest) (response UpdateReportStatusResponse, err error) {
+	reportStatus := reportstore.ParseReportStatus(request.Status)
+	if reportStatus == reportstore.ReportStatusUnknown {
+		err = ErrUnknownReportStatus
+		return
+	}
+
+	var resp reportstore.UserHasAccessResponse
+	resp, err = m.store.UserHasAccess(reportstore.UserHasAccessRequest{
+		UserID:   request.UserID,
+		ReportID: request.ReportID,
+	})
+	if err != nil {
+		return
+	}
+	if !resp.HasAccess {
+		err = ErrNotHavePermission
+		return
+	}
+
+	err = m.store.UpdateReportStatus(reportstore.UpdateReportStatusRequest{
+		ReportID: request.ReportID,
+		Status:   reportStatus,
+	})
+	return
+}
+
+func (m *ReportManager) GetUserReports(request GetUserReportsRequest) (response GetUserReportsResponse, err error) {
+	var resp reportstore.GetUserReportsResponse
+	resp, err = m.store.GetUserReports(reportstore.GetUserReportsRequest{
+		UserID: request.UserID,
+	})
+	response.Reports = resp.Reports
 	return
 }
